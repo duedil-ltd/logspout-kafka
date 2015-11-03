@@ -47,8 +47,6 @@ func NewKafkaAdapter(route *router.Route) (router.LogAdapter, error) {
 		}
 	}
 
-	var json = os.Getenv("KAFKA_TEMPLATE_JSON") != ""
-
 	if os.Getenv("DEBUG") != "" {
 		log.Printf("Starting Kafka producer for address: %s, topic: %s.\n", brokers, topic)
 	}
@@ -79,7 +77,7 @@ func NewKafkaAdapter(route *router.Route) (router.LogAdapter, error) {
 		topic:    topic,
 		producer: producer,
 		tmpl:     tmpl,
-		json:     json,
+		json:     os.Getenv("KAFKA_TEMPLATE_JSON") != "",
 	}, nil
 }
 

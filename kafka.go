@@ -25,6 +25,7 @@ type KafkaAdapter struct {
 	topic    string
 	producer sarama.AsyncProducer
 	tmpl     *template.Template
+	json     bool
 }
 
 func NewKafkaAdapter(route *router.Route) (router.LogAdapter, error) {

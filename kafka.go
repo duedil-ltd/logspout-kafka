@@ -46,9 +46,6 @@ func NewKafkaAdapter(route *router.Route) (router.LogAdapter, error) {
 			return nil, errorf("Couldn't parse Kafka message template. %v", err)
 		}
 	}
-	if !isJSON(message.Data) && os.Getenv("KAFKA_TEMPLATE_JSON") != "" {
-		message.Data = strconv.Quote(message.Data)
-	}
 
 	if os.Getenv("DEBUG") != "" {
 		log.Printf("Starting Kafka producer for address: %s, topic: %s.\n", brokers, topic)
@@ -80,6 +77,7 @@ func NewKafkaAdapter(route *router.Route) (router.LogAdapter, error) {
 		topic:    topic,
 		producer: producer,
 		tmpl:     tmpl,
+		json:     os.Getenv("KAFKA_TEMPLATE_JSON") != "",
 	}, nil
 }
 
@@ -119,6 +117,11 @@ func newConfig() *sarama.Config {
 
 func (a *KafkaAdapter) formatMessage(message *router.Message) (*sarama.ProducerMessage, error) {
 	var encoder sarama.Encoder
+
+	if a.json && !isJSON(message.Data) {
+		message.Data = strconv.Quote(message.Data)
+	}
+
 	if a.tmpl != nil {
 		var w bytes.Buffer
 		if err := a.tmpl.Execute(&w, message); err != nil {

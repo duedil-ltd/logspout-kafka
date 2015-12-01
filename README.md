@@ -35,9 +35,9 @@ time="2015-06-23 09:54:55.241951004 +0000 UTC" container_name="/hello_container"
 This adapter also provides functionality to always generate valid JSON logs from your applications. You can customize this behaviour by setting the `KAFKA_TEMPLATE_JSON` environment variable and the `KAFKA_TEMPLATE` variable as so:
 ```
 KAFKA_TEMPLATE_JSON=1
-KAFKA_TEMPLATE="{\"time\":\"{{.Time}}\", \"container_name\":\"{{.Container}}\", \"source\":\"{{.Source}}\", \"data\":{{.Data}}}"
+KAFKA_TEMPLATE="{\"timestamp\":\"{{.Time}}\", \"container_name\":\"{{.Container.Name}}\", \"message\":{{ .Data }}}"
 ```
-Please note that there is no quoting around `{{.Data}}`. The adapter will take care of quoting the log line for you if it's not a valid JSON but won't quote if it is.
+Please not that there is no quoting around Data. If your application outputs a valid JSON the adapter will merge it into the template. If not, your log output will be quoted and added under the `message` field.
 
 ## route configuration
 

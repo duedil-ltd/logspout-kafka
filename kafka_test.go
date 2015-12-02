@@ -1,9 +1,12 @@
 package kafka
 
-import "testing"
+import (
+	"encoding/json"
+	"reflect"
+	"testing"
+)
 
 var noopts = map[string]string{}
-
 
 func Test_read_route_address(t *testing.T) {
 	address := "broker1:9092,broker2:9092"
@@ -45,5 +48,57 @@ func Test_read_route_address_with_a_slash_topic_trumps_a_topic_option(t *testing
 	topic := readTopic("broker/hello", opts)
 	if topic != "hello" {
 		t.Errorf("topic should not be %s", topic)
+	}
+}
+
+func Test_build_JSON_log_line_with_JSON(t *testing.T) {
+	template := "{\"timestamp\":\"2015-12-01 14:34:23 UTC\", \"container_name\":\"a7d7e998ede90c0b\", \"message\":{\"message\":\"Log message\", \"logger\":\"logger\", \"timestamp\":\"2015-12-01 14:34:22 UTC\"}}"
+	message := "{\"message\":\"Log message\", \"logger\":\"logger\", \"timestamp\":\"2015-12-01 14:34:22 UTC\"}"
+	expectedLogline := "{\"timestamp\":\"2015-12-01 14:34:22 UTC\", \"container_name\":\"a7d7e998ede90c0b\", \"message\":\"Log message\", \"logger\":\"logger\"}"
+
+	logline, err := buildJSONLogLine([]byte(template), message)
+	if err != nil {
+		t.Error("expected not to fail")
+	}
+
+	var loglineJSON map[string]interface{}
+	var expectedLoglineJSON map[string]interface{}
+	json.Unmarshal(logline, &loglineJSON)
+	json.Unmarshal([]byte(expectedLogline), &expectedLoglineJSON)
+
+	if !reflect.DeepEqual(loglineJSON, expectedLoglineJSON) {
+		t.Errorf("Expected JSON log line to be: %s \nbut got: %s", expectedLogline, string(logline))
+	}
+}
+
+func Test_build_JSON_log_line_with_simple_text(t *testing.T) {
+	template := "{\"timestamp\":\"2015-12-01 14:34:23 UTC\", \"container_name\":\"a7d7e998ede90c0b\", \"message\":\"Log message\"}"
+	message := "Log message"
+	expectedLogline := "{\"timestamp\":\"2015-12-01 14:34:23 UTC\", \"container_name\":\"a7d7e998ede90c0b\", \"message\":\"Log message\"}"
+
+	logline, err := buildJSONLogLine([]byte(template), message)
+	if err != nil {
+		t.Error("expected not to fail")
+	}
+
+	var loglineJSON map[string]interface{}
+	var expectedLoglineJSON map[string]interface{}
+	json.Unmarshal(logline, &loglineJSON)
+	json.Unmarshal([]byte(expectedLogline), &expectedLoglineJSON)
+
+	if !reflect.DeepEqual(loglineJSON, expectedLoglineJSON) {
+		t.Errorf("Expected JSON log line to be: %s \nbut got: %s", expectedLogline, string(logline))
+	}
+}
+
+func Test_is_JSON_with_JSON(t *testing.T) {
+	if !isJSON("{\"message\":\"Log message\", \"logger\":\"logger\"}") {
+		t.Error("should output true if valid JSON")
+	}
+}
+
+func Test_is_JSON_with_not_JSON(t *testing.T) {
+	if isJSON("\"message\":\"Log message\", \"logger\":\"logger\"") {
+		t.Error("should not output true if not valid JSON")
 	}
 }

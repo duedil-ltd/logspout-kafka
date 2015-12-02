@@ -90,3 +90,15 @@ func Test_build_JSON_log_line_with_simple_text(t *testing.T) {
 		t.Errorf("Expected JSON log line to be: %s \nbut got: %s", expectedLogline, string(logline))
 	}
 }
+
+func Test_is_JSON_with_JSON(t *testing.T) {
+	if !isJSON("{\"message\":\"Log message\", \"logger\":\"logger\"}") {
+		t.Error("should output true if valid JSON")
+	}
+}
+
+func Test_is_JSON_with_not_JSON(t *testing.T) {
+	if isJSON("\"message\":\"Log message\", \"logger\":\"logger\"") {
+		t.Error("should not output true if not valid JSON")
+	}
+}

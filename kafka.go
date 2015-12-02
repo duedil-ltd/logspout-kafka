@@ -129,28 +129,16 @@ func (a *KafkaAdapter) formatMessage(message *router.Message) (*sarama.ProducerM
 		if err := a.tmpl.Execute(&w, message); err != nil {
 			return nil, err
 		}
-		executed_template := w.Bytes()
+		executedTemplate := w.Bytes()
 		// Parse and merge if JSON
 		if a.json {
-			var json_template map[string]interface{}
-			var json_log map[string]interface{}
-
-			if err := json.Unmarshal(executed_template, &json_template); err != nil {
-				return nil, err
-			}
-			// if message.Data is not JSON, we'll just leave everything as is
-			if err := json.Unmarshal([]byte(message.Data), &json_log); err == nil {
-				for k, v := range json_log {
-					json_template[k] = v
-				}
-			}
-			log_line, err := json.Marshal(json_template)
+			log_line, err := buildJSONLogLine(executedTemplate, message.Data)
 			if err != nil {
 				return nil, err
 			}
 			encoder = sarama.ByteEncoder(log_line)
 		} else {
-			encoder = sarama.ByteEncoder(executed_template)
+			encoder = sarama.ByteEncoder(executedTemplate)
 		}
 	} else {
 		encoder = sarama.StringEncoder(message.Data)
@@ -189,6 +177,26 @@ func errorf(format string, a ...interface{}) (err error) {
 		fmt.Println(err.Error())
 	}
 	return
+}
+
+func buildJSONLogLine(template []byte, message string) ([]byte, error) {
+	var json_template map[string]interface{}
+	var json_log map[string]interface{}
+
+	if err := json.Unmarshal(template, &json_template); err != nil {
+		return nil, err
+	}
+	// if the message is not JSON, we'll just leave everything as is
+	if err := json.Unmarshal([]byte(message), &json_log); err == nil {
+		for k, v := range json_log {
+			json_template[k] = v
+		}
+	}
+	log_line, err := json.Marshal(json_template)
+	if err != nil {
+		return nil, err
+	}
+	return log_line, nil
 }
 
 func isJSON(s string) bool {

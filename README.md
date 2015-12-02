@@ -37,7 +37,7 @@ This adapter also provides functionality to always generate valid JSON logs from
 KAFKA_TEMPLATE_JSON=1
 KAFKA_TEMPLATE="{\"timestamp\":\"{{.Time}}\", \"container_name\":\"{{.Container.Name}}\", \"message\":{{ .Data }}}"
 ```
-Please not that there is no quoting around Data. If your application outputs a valid JSON the adapter will merge it into the template. If not, your log output will be quoted and added under the `message` field.
+Please note that there is no quoting around `{{.Data}}`. If your application outputs a valid JSON the adapter will merge it into the template. If not, your log output will be quoted and added under the relevant field from the template, `message` in this case.
 
 ## route configuration
 

@@ -119,6 +119,7 @@ func newConfig() *sarama.Config {
 func (a *KafkaAdapter) formatMessage(message *router.Message) (*sarama.ProducerMessage, error) {
 	var encoder sarama.Encoder
 
+	// Quote message.Data if not JSON
 	if a.json && !isJSON(message.Data) {
 		message.Data = strconv.Quote(message.Data)
 	}
@@ -128,7 +129,29 @@ func (a *KafkaAdapter) formatMessage(message *router.Message) (*sarama.ProducerM
 		if err := a.tmpl.Execute(&w, message); err != nil {
 			return nil, err
 		}
-		encoder = sarama.ByteEncoder(w.Bytes())
+		executed_template := w.Bytes()
+		// Parse and merge if JSON
+		if a.json {
+			var json_template map[string]interface{}
+			var json_log map[string]interface{}
+
+			if err := json.Unmarshal(executed_template, &json_template); err != nil {
+				return nil, err
+			}
+			// if message.Data is not JSON, we'll just leave everything as is
+			if err := json.Unmarshal([]byte(message.Data), &json_log); err == nil {
+				for k, v := range json_log {
+					json_template[k] = v
+				}
+			}
+			log_line, err := json.Marshal(json_template)
+			if err != nil {
+				return nil, err
+			}
+			encoder = sarama.ByteEncoder(log_line)
+		} else {
+			encoder = sarama.ByteEncoder(executed_template)
+		}
 	} else {
 		encoder = sarama.StringEncoder(message.Data)
 	}

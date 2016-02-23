@@ -87,12 +87,11 @@ func (a *KafkaAdapter) Stream(logstream chan *router.Message) {
 	for rm := range logstream {
 		message, err := a.formatMessage(rm)
 		if err != nil {
-			log.Println("kafka:", err)
-			a.route.Close()
-			break
+			log.Println("kafka:", rm, err)
+			continue
+		} else {
+			a.producer.Input() <- message
 		}
-
-		a.producer.Input() <- message
 	}
 }
 
